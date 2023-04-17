@@ -148,60 +148,16 @@ jobs:
           {
               throw "YY-Thunks.UnitTest单元测试失败！"
           }
-    - uses: dorny/test-reporter@v1
-      if: success() || failure()
-      with:
-        name: 单元测试报告
-        path: TestResults/*.trx
-        reporter: dotnet-trx
-        
+
     - name: 文件打包
       working-directory: ${{env.GITHUB_WORKSPACE}}
       shell: cmd
       run: |
           ::打包Release
           7z a -tzip YY-Thunks-${{env.BuildVersion}}-Binary.zip objs LICENSE ReadMe.md ThunksList.md
-          
-          ::打包Nuget
-          if "${{env.BuildVersion}}" NEQ "" (
-              nuget pack YY-Thunks-New.nuspec -Properties version=${{env.BuildVersion}};commit=%GITHUB_SHA%
-          )
-                    
+
     - uses: actions/upload-artifact@v2
       with:
         path: |
             *.nupkg
             *.zip
-
-    # 失败时我们收集一些信息，用于诊断
-    - uses: actions/upload-artifact@v2
-      if: failure()
-      with:
-        name: ErrorLog
-        path: |
-            TestResults/**/*.dmp
-            TestResults/**/Sequence_*.xml
-            src\Release\YY-Thunks.UnitTest.dll
-            src\Release\YY-Thunks.UnitTest.pdb
-            src\Release\*.log
-            src\x64\Release\YY-Thunks.UnitTest.dll
-            src\x64\Release\YY-Thunks.UnitTest.pdb
-            src\x64\Release\*.log
-
-    - uses: xresloader/upload-to-github-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        file: "YY-Thunks-*.zip"
-        overwrite: true
-        tags: true
-        draft: false
-
-    - name: 内容发布
-      if: contains(github.ref, 'tags/')
-      working-directory: ${{env.GITHUB_WORKSPACE}}
-      shell: cmd
-      run: |
-         :: 把生成的nuget包发布到nuget中
-         nuget push YY-Thunks.${{env.BuildVersion}}.nupkg -ApiKey ${{ secrets.NUGET_TOKEN }} -Source https://api.nuget.org/v3/index.json
-

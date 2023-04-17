@@ -116,8 +116,12 @@ SystemFunction036(
 #pragma comment(lib, "User32.lib")
 #endif
 
-//展开函数的所有的 声明 以及 try_get_ 函数
+//展开函数的所有的 声明 以及 try_get_ 函数，使用 函数名 来获取函数地址
 #define __DEFINE_THUNK(_MODULE, _SIZE, _RETURN_, _CONVENTION_, _FUNCTION, ...)                 \
+	__DEFINE_THUNK_WN(_MODULE, _SIZE, _RETURN_, _CONVENTION_, _FUNCTION, _CRT_STRINGIZE(_FUNCTION), __VA_ARGS__)
+
+//展开函数的所有的 声明 以及 try_get_ 函数，使用 函数名 或 序数 来获取函数地址，WN = WITH NAME
+#define __DEFINE_THUNK_WN(_MODULE, _SIZE, _RETURN_, _CONVENTION_, _FUNCTION, _NAME, ...)   \
     __APPLY_UNIT_TEST_BOOL(_FUNCTION);                                                         \
     EXTERN_C _RETURN_ _CONVENTION_ _FUNCTION(__VA_ARGS__);                                     \
 	static decltype(_FUNCTION)* __cdecl _CRT_CONCATENATE(try_get_, _FUNCTION)() noexcept       \
@@ -130,7 +134,7 @@ SystemFunction036(
 		__declspec(allocate(".YYThu$AAB")) static void* _CRT_CONCATENATE(pFun_, _FUNCTION);    \
 		return reinterpret_cast<decltype(_FUNCTION)*>(try_get_function(                        \
 		&_CRT_CONCATENATE(pFun_ ,_FUNCTION),                                                   \
-		_CRT_STRINGIZE(_FUNCTION),                                                             \
+		_NAME,                                                                                 \
         &_CRT_CONCATENATE(try_get_module_, _MODULE)));                                         \
 	}                                                                                          \
 	__if_not_exists(_CRT_CONCATENATE(try_get_, _FUNCTION))
@@ -346,6 +350,9 @@ namespace YY
 #define __DEFINE_THUNK(_MODULE, _SIZE, _RETURN_, _CONVENTION_, _FUNCTION, ...)     \
     _LCRT_DEFINE_IAT_SYMBOL(_FUNCTION, _SIZE);                                     \
     EXTERN_C _RETURN_ _CONVENTION_ _FUNCTION(__VA_ARGS__)
+
+#define __DEFINE_THUNK_WN(_MODULE, _SIZE, _RETURN_, _CONVENTION_, _FUNCTION, _NAME, ...) \
+	__DEFINE_THUNK(_MODULE, _SIZE, _RETURN_, _CONVENTION_, _FUNCTION, __VA_ARGS__)
 
 #include "YY_Thunks_List.hpp"
 
